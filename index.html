@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>APC Capacitaciones — Simulador de Examen</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --green:#1D9E75;--green-dark:#0F6E56;--green-light:#E1F5EE;--green-mid:#9FE1CB;
+    --blue-light:#E6F1FB;--blue:#185FA5;
+    --bg:#F8FAF9;--surface:#FFFFFF;--border:#E2E8E5;--border2:#C8D5D0;
+    --text:#1A2B24;--text2:#4A6558;--text3:#8AA89A;
+    --red-bg:#FEF0EE;--red:#C0392B;--red-border:#F5B8B0;
+    --ok-bg:#EAF3DE;--ok:#27500A;--ok-border:#97C459;
+  }
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+  .screen{display:none}.screen.active{display:block}
+
+  /* LOGIN / REGISTER */
+  .auth-page{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;background:linear-gradient(135deg,#f0fdf7 0%,#e8f5f0 100%)}
+  .auth-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2.5rem;width:100%;max-width:420px;box-shadow:0 4px 32px rgba(29,158,117,.08)}
+  .logo-area{text-align:center;margin-bottom:2rem}
+  .logo-icon{width:60px;height:60px;background:var(--green);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;box-shadow:0 4px 16px rgba(29,158,117,.3)}
+  .logo-icon svg{width:30px;height:30px;fill:none;stroke:white;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .logo-area h1{font-size:20px;font-weight:600;color:var(--text)}
+  .logo-area p{font-size:13px;color:var(--text2);margin-top:4px}
+  .form-group{margin-bottom:14px}
+  .form-group label{font-size:13px;color:var(--text2);display:block;margin-bottom:6px;font-weight:500}
+  .form-group input,.form-group select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s}
+  .form-group input:focus,.form-group select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.12)}
+  .inp-hint{font-size:11px;color:var(--text3);margin-top:4px}
+  .btn-main{width:100%;padding:12px;background:var(--green);color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:8px;transition:background .15s,transform .1s}
+  .btn-main:hover{background:var(--green-dark)}
+  .btn-main:active{transform:scale(.98)}
+  .toggle-link{text-align:center;margin-top:16px;font-size:13px;color:var(--text2)}
+  .toggle-link a{color:var(--green);cursor:pointer;font-weight:500}
+  .err-msg{font-size:13px;color:var(--red);background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:none}
+  .ok-msg{font-size:13px;color:var(--ok);background:var(--ok-bg);border:1px solid var(--ok-border);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:none}
+
+  /* DASHBOARD */
+  .dash-page{min-height:100vh;background:var(--bg)}
+  .dash-header{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+  .dash-header-left{display:flex;align-items:center;gap:12px}
+  .dash-logo{width:36px;height:36px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .dash-logo svg{width:20px;height:20px;fill:none;stroke:white;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .dash-brand{font-size:15px;font-weight:600;color:var(--text)}
+  .dash-body{max-width:720px;margin:0 auto;padding:2rem 1.5rem}
+  .dash-welcome{margin-bottom:1.5rem}
+  .dash-welcome h2{font-size:22px;font-weight:600;color:var(--text)}
+  .dash-welcome p{font-size:14px;color:var(--text2);margin-top:4px}
+  .module-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1rem}
+  @media(max-width:480px){.module-grid{grid-template-columns:1fr}}
+  .module-card{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:1.5rem;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+  .module-card:hover{border-color:var(--green);box-shadow:0 4px 20px rgba(29,158,117,.12);transform:translateY(-2px)}
+  .module-card.locked{opacity:.5;cursor:not-allowed}
+  .module-card.locked:hover{border-color:var(--border);box-shadow:none;transform:none}
+  .mod-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;margin-bottom:12px;letter-spacing:.5px;text-transform:uppercase}
+  .badge-m1{background:var(--green-light);color:var(--green-dark)}
+  .badge-m2{background:var(--blue-light);color:var(--blue)}
+  .module-card h3{font-size:17px;font-weight:600;color:var(--text);margin-bottom:6px}
+  .module-card p{font-size:13px;color:var(--text2);line-height:1.5}
+  .mod-meta{font-size:12px;color:var(--text3);margin-top:10px}
+  .btn-sm{padding:8px 16px;font-size:13px;font-weight:500;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .12s}
+  .btn-sm:hover{background:var(--bg)}
+
+  /* EXAM */
+  .exam-page{min-height:100vh;background:var(--bg)}
+  .exam-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:.875rem 1.5rem;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+  .exam-topbar h2{font-size:14px;font-weight:600;flex:1;color:var(--text)}
+  .timer-pill{background:var(--green-light);color:var(--green-dark);font-size:13px;font-weight:600;font-family:'DM Mono',monospace;padding:5px 12px;border-radius:20px}
+  .timer-pill.urgent{background:#FEF0EE;color:var(--red)}
+  .exam-body{max-width:680px;margin:0 auto;padding:1.5rem}
+  .prog-wrap{background:var(--border);border-radius:20px;height:5px;margin-bottom:1.5rem}
+  .prog-fill{background:var(--green);height:5px;border-radius:20px;transition:width .4s}
+  .q-meta{font-size:12px;color:var(--text3);margin-bottom:.5rem;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+  .q-text{font-size:16px;font-weight:500;color:var(--text);margin-bottom:1.25rem;line-height:1.65}
+  .opts{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:1.25rem}
+  .opt{padding:12px 16px;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;font-size:14px;color:var(--text);background:var(--surface);transition:all .12s;display:flex;align-items:center;gap:12px;line-height:1.4}
+  .opt:hover{border-color:var(--green);background:var(--green-light)}
+  .opt.selected{border-color:var(--green);background:var(--green-light)}
+  .opt.correct{border-color:#3B6D11;background:var(--ok-bg);color:#27500A}
+  .opt.wrong{border-color:var(--red);background:var(--red-bg);color:var(--red)}
+  .opt-circle{width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .12s}
+  .opt.selected .opt-circle{border-color:var(--green);background:var(--green)}
+  .opt.correct .opt-circle{border-color:#3B6D11;background:#3B6D11}
+  .opt.wrong .opt-circle{border-color:var(--red);background:var(--red)}
+  .opt-dot{width:8px;height:8px;border-radius:50%;background:white;display:none}
+  .opt.selected .opt-dot,.opt.correct .opt-dot,.opt.wrong .opt-dot{display:block}
+  .feedback{padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:1.25rem;display:none;line-height:1.5}
+  .feedback.ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-border)}
+  .feedback.bad{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+  .nav-row{display:flex;justify-content:flex-end}
+  .btn-next{padding:11px 28px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;background:var(--green);color:white;border:none;border-radius:10px;cursor:pointer;transition:background .12s}
+  .btn-next:hover{background:var(--green-dark)}
+  .btn-next:disabled{background:var(--green-mid);cursor:not-allowed}
+
+  /* RESULT */
+  .result-page{min-height:100vh;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:2rem 1rem}
+  .result-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2.5rem;width:100%;max-width:480px;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,.06)}
+  .result-ring{width:110px;height:110px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;margin:0 auto 1.5rem}
+  .ring-pass{background:var(--ok-bg);color:var(--ok);border:3px solid var(--ok-border)}
+  .ring-fail{background:var(--red-bg);color:var(--red);border:3px solid var(--red-border)}
+  .result-card h2{font-size:22px;font-weight:700;margin-bottom:8px}
+  .result-card p{font-size:14px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.75rem}
+  .stat{background:var(--bg);border-radius:12px;padding:14px;border:1px solid var(--border)}
+  .stat .val{font-size:24px;font-weight:700;color:var(--text)}
+  .stat .lbl{font-size:11px;color:var(--text3);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+  .result-actions{display:flex;flex-direction:column;gap:10px}
+
+  /* ADMIN */
+  .admin-page{min-height:100vh;background:var(--bg)}
+  .admin-body{max-width:960px;margin:0 auto;padding:2rem 1.5rem}
+  .admin-body h2{font-size:20px;font-weight:600;margin-bottom:1.5rem;color:var(--text)}
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+  th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600;white-space:nowrap;background:var(--bg)}
+  td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+  tr:last-child td{border-bottom:none}
+  .tag{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600}
+  .tag-m1{background:var(--green-light);color:var(--green-dark)}
+  .tag-m2{background:var(--blue-light);color:var(--blue)}
+  .pass-pill{font-family:'DM Mono',monospace;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 7px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen active">
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="logo-area">
+        <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        <h1>APC Capacitaciones</h1>
+        <p>Simulador de examen — Informática</p>
+      </div>
+      <div id="login-err" class="err-msg"></div>
+      <div class="form-group">
+        <label>Número de cédula</label>
+        <input type="text" id="inp-user" placeholder="Ej: 0912345678" maxlength="13"/>
+        <div class="inp-hint">Tu cédula es tu usuario de acceso</div>
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="inp-pass" placeholder="Tu contraseña"/>
+      </div>
+      <button class="btn-main" id="btn-login">Ingresar</button>
+      <div class="toggle-link">¿No tienes cuenta? <a id="go-register">Registrarse</a> &nbsp;·&nbsp; <a id="go-admin" style="color:var(--text3)">Admin</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div id="screen-register" class="screen">
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="logo-area">
+        <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        <h1>Crear cuenta</h1>
+        <p>Completa tus datos para registrarte</p>
+      </div>
+      <div id="reg-err" class="err-msg"></div>
+      <div id="reg-ok" class="ok-msg"></div>
+      <div class="form-group"><label>Nombre completo</label><input type="text" id="reg-name" placeholder="Tu nombre completo"/></div>
+      <div class="form-group">
+        <label>Número de cédula</label>
+        <input type="text" id="reg-user" placeholder="Ej: 0912345678" maxlength="13"/>
+        <div class="inp-hint">Será tu usuario para iniciar sesión</div>
+      </div>
+      <div class="form-group"><label>Correo electrónico</label><input type="email" id="reg-email" placeholder="ejemplo@correo.com"/></div>
+      <div class="form-group"><label>Contraseña</label><input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres"/></div>
+      <div class="form-group">
+        <label>Módulo asignado</label>
+        <select id="reg-module">
+          <option value="">— Selecciona tu módulo —</option>
+          <option value="1">Módulo 1</option>
+          <option value="2">Módulo 2</option>
+        </select>
+      </div>
+      <button class="btn-main" id="btn-register">Crear cuenta</button>
+      <div class="toggle-link">¿Ya tienes cuenta? <a id="go-login">Iniciar sesión</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="screen-dash" class="screen">
+  <div class="dash-page">
+    <div class="dash-header">
+      <div class="dash-header-left">
+        <div class="dash-logo"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        <span class="dash-brand">APC Capacitaciones</span>
+      </div>
+      <button class="btn-sm" id="btn-logout">Cerrar sesión</button>
+    </div>
+    <div class="dash-body">
+      <div class="dash-welcome">
+        <h2 id="dash-welcome">Bienvenido</h2>
+        <p id="dash-sub">Selecciona tu módulo para comenzar el simulador</p>
+      </div>
+      <div class="module-grid">
+        <div class="module-card" id="card-m1">
+          <div class="mod-badge badge-m1">Módulo 1</div>
+          <h3>Informática Básica</h3>
+          <p>Windows, Google Workspace, Zoom, Gmail, Linux, navegadores y ciberseguridad.</p>
+          <div class="mod-meta">85 preguntas en banco · 40 por intento · 75% para aprobar</div>
+        </div>
+        <div class="module-card locked" id="card-m2">
+          <div class="mod-badge badge-m2">Módulo 2</div>
+          <h3>Excel, PowerPoint e IA</h3>
+          <p>Microsoft Excel avanzado, PowerPoint, ChatGPT, Microsoft Copilot y tipos de IA.</p>
+          <div class="mod-meta">90 preguntas en banco · 40 por intento · 75% para aprobar</div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--text3)">Solo puedes acceder al módulo asignado a tu cuenta. Cada intento presenta preguntas aleatorias del banco.</p>
+    </div>
+  </div>
+</div>
+
+<!-- EXAM -->
+<div id="screen-exam" class="screen">
+  <div class="exam-page">
+    <div class="exam-topbar">
+      <button class="btn-sm" id="btn-exit-exam">← Salir</button>
+      <h2 id="exam-title">Simulador</h2>
+      <div class="timer-pill" id="exam-timer">60:00</div>
+    </div>
+    <div class="exam-body">
+      <div class="prog-wrap"><div class="prog-fill" id="prog-bar" style="width:0%"></div></div>
+      <div class="q-meta" id="q-counter">Pregunta 1 de 40</div>
+      <div class="q-text" id="q-text"></div>
+      <ul class="opts" id="q-options"></ul>
+      <div class="feedback" id="feedback-box"></div>
+      <div class="nav-row"><button class="btn-next" id="btn-next" disabled>Siguiente →</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+  <div class="result-page">
+    <div class="result-card">
+      <div class="result-ring" id="result-circle"></div>
+      <h2 id="result-title"></h2>
+      <p id="result-msg"></p>
+      <div class="stats-grid">
+        <div class="stat"><div class="val" id="r-correct"></div><div class="lbl">Correctas</div></div>
+        <div class="stat"><div class="val" id="r-wrong"></div><div class="lbl">Incorrectas</div></div>
+        <div class="stat"><div class="val" id="r-pct"></div><div class="lbl">Puntaje</div></div>
+      </div>
+      <div class="result-actions">
+        <button class="btn-main" id="btn-retry">Intentar de nuevo</button>
+        <button class="btn-sm" id="btn-back-dash" style="width:100%">Volver al inicio</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="screen-admin" class="screen">
+  <div class="admin-page">
+    <div class="dash-header">
+      <div class="dash-header-left">
+        <div class="dash-logo"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        <span class="dash-brand">Panel de Administración</span>
+      </div>
+      <button class="btn-sm" id="btn-admin-back">← Volver</button>
+    </div>
+    <div class="admin-body">
+      <div id="admin-err" class="err-msg"></div>
+      <div id="admin-login-area">
+        <h2>Acceso de administrador</h2>
+        <div class="form-group" style="max-width:320px">
+          <label>Contraseña de administrador</label>
+          <input type="password" id="admin-pass-inp" placeholder="Contraseña admin"/>
+        </div>
+        <button class="btn-main" id="btn-admin-login" style="max-width:180px">Entrar</button>
+      </div>
+      <div id="admin-content" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <h2 style="margin-bottom:0">Usuarios registrados</h2>
+          <span id="admin-count" style="font-size:13px;color:var(--text3)"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Nombre</th><th>Cédula</th><th>Correo</th><th>Contraseña</th><th>Módulo</th><th>Registro</th><th>Intentos</th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PASSWORD="admin2024";
+const STORAGE_KEY="apc_users_v2";
+
+const Q_M1=[
+  {q:"En GOOGLE DOCS: La barra de herramientas está ubicada en la parte superior de la interfaz.",opts:["Verdadero","Falso"],ans:0},
+  {q:"Los archivos .pptx de PowerPoint NO se pueden importar ni exportar en Google Slides.",opts:["Verdadero","Falso"],ans:1},
+  {q:"En el Explorador de Archivos de Windows, ¿qué permite la opción 'Casillas de selección'?",opts:["Mover archivos entre carpetas","Cambiar nombre de archivos","Mostrar información de espacio en disco","Seleccionar múltiples archivos y carpetas fácilmente"],ans:3},
+  {q:"En Herramientas del Sistema en Windows, ¿qué función cumple el Solucionador de Problemas?",opts:["Identificar y resolver problemas comunes del sistema","Configurar programas de inicio","Editar registros de Windows","Eliminar archivos temporales"],ans:0},
+  {q:"PowerPoint no permite exportar a PDF.",opts:["Verdadero","Falso"],ans:1},
+  {q:"La versión gratuita de Zoom permite reuniones de grupo ilimitadas sin límite de tiempo.",opts:["Verdadero","Falso"],ans:1},
+  {q:"La carpeta de spam y la papelera en Gmail ocupan espacio de almacenamiento.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿Por qué es importante capacitar a docentes en herramientas de la nube?",opts:["Para que no compartan archivos","Para que dependan del papel y lápiz","Para limitar la interacción en el aula","Para que puedan aprovechar al máximo las plataformas"],ans:3},
+  {q:"En 'Historia y evolución de Windows', ¿qué nueva función ofreció Windows 7 respecto a monitores?",opts:["Trabajar con varios monitores en simultáneo","Integración de nubes","Soporte de puertos USB","Soporte de pantallas táctiles"],ans:0},
+  {q:"En GOOGLE DOCS: Las opciones de 'Formato' incluyen modificaciones del estilo del texto y párrafos.",opts:["Verdadero","Falso"],ans:0},
+  {q:"El comando 'exit' cierra la ventana del Símbolo del Sistema de manera segura y finaliza la sesión actual.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿Qué aspecto garantiza una animación efectiva en PowerPoint?",opts:["Coherencia de estilo y número moderado de efectos","Animaciones aleatorias en todas las diapositivas","Máximo número de animaciones posibles","Uso exclusivo de transiciones de diapositiva"],ans:0},
+  {q:"El comando 'tree' es útil para entender la organización de los directorios y subdirectorios.",opts:["Verdadero","Falso"],ans:0},
+  {q:"El DNS funciona como una enorme agenda telefónica de Internet, permitiendo usar nombres en lugar de direcciones numéricas.",opts:["Verdadero","Falso"],ans:0},
+  {q:"Los comentarios se pueden editar, eliminar o resolver en Word para mantener la organización y claridad durante la revisión.",opts:["Verdadero","Falso"],ans:0},
+  {q:"En Herramientas del Sistema en Windows, ¿cuál herramienta reorganiza archivos fragmentados para optimizar el disco duro?",opts:["Monitor de Rendimiento","Desfragmentador de Disco","Windows Defender","Administrador de Dispositivos"],ans:1},
+  {q:"¿Cuál es una desventaja de PowerPoint?",opts:["No admite plantillas","No funciona sin internet","No tiene animaciones","Puede consumir más recursos del sistema"],ans:3},
+  {q:"Mosaic fue el primer navegador web creado en 1990.",opts:["Verdadero","Falso"],ans:1},
+  {q:"En GOOGLE DOCS: Se actualiza frecuentemente para mejorar funcionalidad y seguridad sin descargas adicionales.",opts:["Verdadero","Falso"],ans:0},
+  {q:"Windows ha sido clave para el desarrollo de millones de aplicaciones y ha impulsado la adopción masiva de la tecnología.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿Cuál es el límite de participantes para una reunión gratuita de Zoom?",opts:["200","100","50","Ilimitados"],ans:1},
+  {q:"En Microsoft Word, ¿qué hace la Pestaña Revisar?",opts:["Agregar una tabla","Corregir ortografía","Aplicar un tema","Insertar imágenes"],ans:1},
+  {q:"¿Cómo se llamó el primer navegador web creado por Tim Berners-Lee?",opts:["World Wide Web","Netscape Navigator","Opera","Mosaic"],ans:0},
+  {q:"Linux ofrece actualizaciones automáticas que mejoran tanto la funcionalidad como la seguridad.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿Qué permite controlar el orden de aparición de cada animación en PowerPoint?",opts:["Panel de animación","Vista previa","Pestaña Diseño","Barra de estado"],ans:0},
+  {q:"Google Slides permite añadir hipervínculos en texto e imágenes.",opts:["Falso","Verdadero"],ans:1},
+  {q:"¿En qué sistema operativo se basó Linux?",opts:["Windows NT","Unix (MINIX)","MS-DOS","Mac OS"],ans:1},
+  {q:"¿Cuál es una función de productividad en Outlook?",opts:["Planificación de reuniones","Snooze de correos","Modo confidencial","Respuestas inteligentes automáticas"],ans:0},
+  {q:"PowerPoint incluye el 'Diseñador de Ideas' que sugiere diseños automáticos.",opts:["Falso","Verdadero"],ans:1},
+  {q:"¿Qué atajo de teclado crea un nuevo documento rápidamente en Google Drive?",opts:["Ctrl + N","Shift + T","Ctrl + C","Ctrl + V"],ans:0},
+  {q:"¿Qué función introdujo Windows XP para compartir el control de un equipo?",opts:["El menú de inicio","La barra de tareas","La asistencia remota","El Active Directory"],ans:2},
+  {q:"La versión gratuita de Zoom permite reuniones ilimitadas de 'uno a uno'.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿En qué año se desarrolló el primer navegador web?",opts:["1990","1995","1985","2000"],ans:0},
+  {q:"Los códigos de verificación enviados por SMS no proporcionan seguridad adicional.",opts:["Verdadero","Falso"],ans:1},
+  {q:"¿En qué año se creó el correo electrónico?",opts:["1983","1969","1975","1971"],ans:3},
+  {q:"Para grabar una videollamada en Zoom, primero debes iniciar o unirte a la reunión.",opts:["Verdadero","Falso"],ans:0},
+  {q:"Los gusanos (worms) requieren intervención del usuario para propagarse a través de redes.",opts:["Verdadero","Falso"],ans:1},
+  {q:"¿Qué combinación de teclas abre la herramienta Ejecutar en Windows?",opts:["Windows + E","Windows + R","Ctrl + R","Alt + F4"],ans:1},
+  {q:"¿Cuál es una característica de Windows 11?",opts:["Pantalla de inicio con baldosas","Diseño moderno y mejoras en productividad","Primera interfaz gráfica","Introducción del menú inicio"],ans:1},
+  {q:"¿Qué compone una contraseña segura?",opts:["Solo letras","Solo números","Solo símbolos","Mayúsculas, minúsculas, números y símbolos"],ans:3},
+  {q:"La personalización de gráficos en Excel incluye agregar títulos, leyendas y ajustar colores.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿Qué característica permite que Linux sea ideal para servidores y supercomputadoras?",opts:["Interfaz gráfica compleja","Solo soporta un usuario","Licencia de pago","Estabilidad y seguridad"],ans:3},
+  {q:"Windows 1.0 funcionaba como un sistema operativo completamente independiente de MS-DOS.",opts:["Verdadero","Falso"],ans:1},
+  {q:"¿Por qué la nube es considerada un motor de la educación del futuro?",opts:["Limita la colaboración","Solo sirve para almacenamiento local","Facilita educación interactiva, inclusiva y accesible","Reduce la disponibilidad de recursos educativos"],ans:2},
+  {q:"En Google Slides se pueden insertar tablas y gráficos.",opts:["Falso","Verdadero"],ans:1},
+  {q:"¿Qué permite la opción 'Dividir' en el Explorador de Archivos de Windows?",opts:["Cambiar la alineación de iconos","Cerrar la ventana actual","Abrir un archivo seleccionado","Dividir la ventana en dos paneles para comparar o mover archivos"],ans:3},
+  {q:"¿Cuál es una característica de las cuentas pagas de Zoom?",opts:["Solo un anfitrión por reunión","Videollamadas sin límite de tiempo","Solo grabación local","Duración máxima de 40 minutos"],ans:1},
+  {q:"Safari fue desarrollado por Apple y lanzado en 2003.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿Qué es Google Drive?",opts:["Un antivirus para computadoras","Una plataforma de almacenamiento en la nube","Un sistema operativo","Un software para diseño gráfico"],ans:1},
+  {q:"La inyección SQL y XSS atacan vulnerabilidades en sitios web y aplicaciones para robar datos.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿Cuántos participantes permite una videollamada en Zoom con cuenta gratuita?",opts:["Ilimitados","Hasta 50 participantes","Hasta 200 participantes","Hasta 100 participantes"],ans:3},
+  {q:"¿Qué función de Gmail cancela un correo enviado en los primeros segundos?",opts:["Deshacer envío","Snooze (Posponer)","Modo sin conexión","Filtros automáticos"],ans:0},
+  {q:"En GOOGLE DOCS: Para mantenerlo actualizado es necesario descargar e instalar nuevas versiones regularmente.",opts:["Verdadero","Falso"],ans:1},
+  {q:"Una tabla dinámica en Microsoft Excel ayuda a organizar y resumir datos.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿Qué medida de seguridad protege tus archivos en Google Drive?",opts:["Archivos guardados en papel","No requiere seguridad","Solo contraseña simple","Cifrado avanzado y arquitectura Zero Trust"],ans:3},
+  {q:"¿Cuál es una característica de Arch Linux?",opts:["Muy fácil de usar","Solo para principiantes","Interfaz gráfica únicamente","Personalizable y minimalista"],ans:3},
+  {q:"Windows NT se basaba en MS-DOS, al igual que las versiones anteriores de Windows.",opts:["Verdadero","Falso"],ans:1},
+  {q:"¿Cuál es la principal ventaja del guardado automático de Google Slides?",opts:["Requiere menos recursos","Genera copias en el PC","Mejora la resolución","Evita pérdida de archivos"],ans:3},
+  {q:"La pestaña Insertar en Word permite agregar imágenes, tablas, gráficos, formas y encabezados.",opts:["Verdadero","Falso"],ans:0},
+  {q:"Google Slides es más estable con archivos muy pesados que PowerPoint.",opts:["Falso","Verdadero"],ans:0},
+  {q:"¿Qué permite la opción 'Propiedades' en el Explorador de Archivos de Windows?",opts:["Mostrar información detallada sobre archivos o carpetas","Mover archivos a otra ubicación","Eliminar archivos seleccionados","Editar archivos directamente"],ans:0},
+  {q:"Los virus informáticos no pueden propagarse a través de dispositivos USB.",opts:["Verdadero","Falso"],ans:1},
+  {q:"La función PROMEDIO en Excel se usa para calcular la suma total de un conjunto de celdas.",opts:["Verdadero","Falso"],ans:1},
+  {q:"¿Cuál es el comando para limpiar la pantalla en Windows CMD?",opts:["clear","clean","cls","clr"],ans:2},
+  {q:"¿Qué elementos introdujo Windows 3.x?",opts:["Iconos, carpetas, barra de tareas y papel tapiz","Soporte para pantallas táctiles","Asistencia remota","Plug and play"],ans:0},
+  {q:"¿Cuál es el objetivo de animar progresivamente la información en PowerPoint?",opts:["Reducir tamaño de la presentación","Evitar saturación y guiar la mirada del público","Guardar cada diapositiva por separado","Cambiar el fondo automáticamente"],ans:1},
+  {q:"¿Qué opción de Zoom permite usar emoticones durante la reunión?",opts:["Aplicaciones","Reacciones","Participantes","Seguridad"],ans:1},
+  {q:"Google Slides permite aplicar animaciones y transiciones entre diapositivas.",opts:["Falso","Verdadero"],ans:1},
+  {q:"Una ventaja de PowerPoint frente a Google Slides es:",opts:["Edición colaborativa en tiempo real","Gratuito con cuenta Google","Guardado automático en Google Drive","Total compatibilidad con archivos PPT"],ans:3},
+  {q:"Los troyanos aparentan ser programas legítimos pero contienen código malicioso.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿Qué significan las siglas NT en Windows NT?",opts:["Net Transport","New Terminal","Network Technology","New Technology"],ans:3},
+  {q:"Los gusanos pueden consumir ancho de banda y recursos del sistema afectando su rendimiento.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿Cuál de estas NO es una característica fundamental de Linux?",opts:["Código abierto","Estabilidad y seguridad","Licencia propietaria","Multitarea y multiusuario"],ans:2},
+  {q:"¿Qué permitía la función plug and play en Windows?",opts:["Crear accesos directos en el escritorio","Conectarse automáticamente a Internet","Usar varios monitores al mismo tiempo","Conectar y ejecutar un dispositivo sin configuración previa"],ans:3},
+  {q:"¿Qué se logra al integrar la nube con sistemas académicos existentes?",opts:["Mayor confusión en la gestión de información","Limitar el acceso a documentos","Aumentar costos de infraestructura física","Evitar duplicidad y optimizar flujos de trabajo"],ans:3},
+  {q:"Las actualizaciones de Linux solo agregan nuevas funciones, sin mejorar la protección del sistema.",opts:["Verdadero","Falso"],ans:1},
+  {q:"Los gestores de contraseñas son herramientas inseguras que no se deben utilizar.",opts:["Verdadero","Falso"],ans:1},
+  {q:"Windows XP, lanzado en 2001, unificó la línea de consumo con la línea NT en un solo sistema operativo.",opts:["Verdadero","Falso"],ans:0},
+  {q:"¿Qué permite la opción 'Seleccionar todo' en el Explorador de Archivos de Windows?",opts:["Seleccionar todos los archivos y carpetas en la ubicación actual","Invertir selección","Mover archivos","Deseleccionar elementos seleccionados"],ans:0},
+  {q:"Outlook permite organizar la bandeja de entrada y gestionar calendarios y tareas.",opts:["Verdadero","Falso"],ans:0},
+  {q:"PowerPoint requiere una suscripción para usarse legalmente.",opts:["Verdadero","Falso"],ans:0},
+  {q:"Solaris es un sistema operativo dirigido para:",opts:["Integrados","Ordenadores (PCs)","Dispositivos móviles","Servidores de red"],ans:1},
+  {q:"¿Qué aplicaciones estaban integradas en las primeras versiones de Microsoft Office?",opts:["Paint y Notepad","Word y Excel","PowerPoint y Access","Outlook y OneNote"],ans:1}
+];
+
+const Q_M2=[
+  {q:"En Microsoft Excel, ¿cuál es el nombre de la herramienta que agrupa comandos relacionados dentro de cada pestaña de la cinta?",opts:["Grupo","Celda","Cuadro","Barra"],ans:0},
+  {q:"¿Cuál es la diferencia principal entre 'Guardar' y 'Guardar como' en Excel?",opts:["Guardar como crea un nuevo archivo","Guardar borra datos","Guardar como imprime automáticamente","Guardar elimina la versión anterior"],ans:0},
+  {q:"¿Cuáles son las operaciones de la barra de acceso rápido de Excel?",opts:["Guardar, Deshacer y Rehacer","Fórmulas y Datos","Insertar y Vista","Inicio y Diseño"],ans:0},
+  {q:"¿Cuál es el comando para iniciar Excel desde Windows?",opts:["Configuración","Inicio","Panel de control","Documentos"],ans:1},
+  {q:"¿Cuál de las siguientes tareas NO es típica de Excel?",opts:["Analizar datos","Elaborar presupuestos","Redactar novelas largas","Crear informes financieros"],ans:2},
+  {q:"¿Qué barra de Excel muestra la opción para controlar el nivel de zoom?",opts:["Barra de estado","Barra de acceso rápido","Barra de título","Barra de fórmulas"],ans:0},
+  {q:"¿Cuál es el uso principal de Excel en el hogar?",opts:["Enviar correos","Editar textos largos","Llevar cuentas familiares","Editar fotos"],ans:2},
+  {q:"¿Qué opción permite acceder a datos en tiempo real desde una fuente externa en Excel?",opts:["Copiar y pegar","Conexión a una base de datos","Autocompletar","Guardar como"],ans:1},
+  {q:"En Excel, ¿qué método permite traer información directamente desde un archivo de texto plano?",opts:["Importar TXT","Escalado","Márgenes","Autocompletar"],ans:0},
+  {q:"En Microsoft Excel, ¿qué ventaja ofrece el autocompletado?",opts:["Reduce errores de escritura","Convierte fórmulas en valores","Imprime celdas vacías","Inserta gráficos automáticamente"],ans:0},
+  {q:"En Microsoft Excel, ¿qué botón permite deshacer un cambio?",opts:["Guardar","Insertar comentario","Escalar","Deshacer"],ans:3},
+  {q:"¿Cuál es la principal utilidad de 'Copiar y pegar' en Excel?",opts:["Escalar la hoja","Ingresar rápidamente datos desde otra fuente","Ajustar márgenes","Crear un gráfico"],ans:1},
+  {q:"Activar 'Fuente normal' en Excel permite:",opts:["Restaurar las opciones de fuente predeterminadas","Activar todos los efectos de texto","Cambiar el idioma de las fuentes","Bloquear el tamaño del texto"],ans:0},
+  {q:"En Excel, ¿qué opción de impresión define los límites de los datos que se imprimirán?",opts:["Márgenes","Área de impresión","Autocompletar","Comentarios"],ans:1},
+  {q:"¿Qué herramienta de Excel evita la entrada de datos incorrectos?",opts:["Segmentación","Formato condicional","Validación de datos","Auditoría de fórmulas"],ans:2},
+  {q:"¿Qué ventaja ofrece la vinculación de celdas entre hojas en Excel?",opts:["Actualización automática de datos","Insertar gráficos","Eliminar macros","Reducción de validaciones"],ans:0},
+  {q:"¿Qué plataforma de hojas de cálculo es estándar en la industria?",opts:["LibreOffice Calc","Excel","Google Sheets","Zoho Sheet"],ans:1},
+  {q:"En Excel, ¿cuál herramienta registra automáticamente las versiones de un documento?",opts:["Validación de datos","Pegado especial","Auditoría de fórmulas","Control de versiones"],ans:3},
+  {q:"¿Cuál es la principal ventaja del control de versiones en Excel?",opts:["Reducir tamaño de archivo","Aumentar cantidad de macros","Restaurar estados previos del documento","Eliminar fórmulas"],ans:2},
+  {q:"¿Cuál es el principal beneficio de la edición colaborativa en tiempo real en Excel?",opts:["Eliminar macros","Aumentar el tamaño de archivos","Evitar el uso de contraseñas","Evitar conflictos de versiones"],ans:3},
+  {q:"¿Qué gráfico es más claro para comparar distribución de porcentajes en un presupuesto?",opts:["Área","Línea","Circular","Barras"],ans:2},
+  {q:"¿Qué gráfico se usa para visualizar comparación de ventas de varias sucursales?",opts:["Columnas","Circular","Área","Línea"],ans:0},
+  {q:"¿Qué gráfico facilita observar tendencias estacionales en datos?",opts:["Circular","Línea","Dispersión","Columnas"],ans:1},
+  {q:"¿Qué tipo de gráfico es ideal para analizar relación entre ingresos y gastos?",opts:["Gráfico de dispersión","Gráfico circular","Gráfico de columnas","Gráfico de líneas"],ans:0},
+  {q:"¿Qué gráfico es más adecuado para mostrar evolución de una variable financiera?",opts:["Línea","Circular","Área","Barras"],ans:0},
+  {q:"¿Qué gráfico usarías para analizar la proporción de gasto por categoría?",opts:["Línea","Área","Dispersión","Circular"],ans:3},
+  {q:"¿Qué gráfico conviene para mostrar distribución de tiempo por actividad?",opts:["Área","Barras","Línea","Circular"],ans:3},
+  {q:"¿Cuál es la diferencia entre área de impresión y vista preliminar en Excel?",opts:["El área solo imprime fórmulas","La vista elimina márgenes","El área decide qué imprimir y la vista muestra cómo quedará","La vista define títulos y el área no"],ans:2},
+  {q:"¿Qué sucede si activas la opción 'Intercalar' al imprimir varias copias en Excel?",opts:["Elimina los márgenes","Se imprime el documento completo en orden cada vez","Se imprimen todas las páginas 1 juntas, luego todas las 2","Cambia el tamaño del papel"],ans:1},
+  {q:"En Excel, ¿qué se puede ajustar en una imagen de fondo para mejorar la legibilidad?",opts:["Solo los colores","Únicamente la posición","Solo el tamaño","La transparencia para ajustar visibilidad"],ans:3},
+  {q:"En Excel, ¿cuál de estas opciones permite ajustar la hoja a una sola página horizontalmente?",opts:["Escala automática","Ajustar a","Vista normal","Centrar en página"],ans:1},
+  {q:"En Excel, ¿cuál es el beneficio de configurar correctamente títulos repetitivos?",opts:["Usa menos papel","Proporciona claridad con datos estructurados","Consume menos tinta","Imprime más rápido"],ans:1},
+  {q:"¿Qué opción permite imprimir solo celdas seleccionadas en Excel?",opts:["Filtrar","Vista normal","Selección activa","Área de impresión"],ans:2},
+  {q:"¿Qué vista es más adecuada para agregar encabezado con logo en Excel?",opts:["Previa de salto de página","Normal","Pantalla completa","Diseño de página"],ans:3},
+  {q:"¿Qué técnica facilita la navegación fluida entre diapositivas de PowerPoint?",opts:["Hipervínculos internos","Guardar en la nube","Comentarios colaborativos","Animaciones de salida"],ans:0},
+  {q:"En PowerPoint, ¿qué opción marca la presentación como final?",opts:["Revisar","Guardar como","Marcar como final","Copiar"],ans:2},
+  {q:"En PowerPoint, ¿con qué botón se aplica la misma transición a todas las diapositivas?",opts:["Vista Duplicar","Aplicar a todas","Sin transición","Copiar transición"],ans:1},
+  {q:"En PowerPoint, ¿qué permite el seguimiento de comentarios?",opts:["Cambiar transiciones","Gestionar respuestas y revisiones","Editar hipervínculos","Eliminar diapositivas"],ans:1},
+  {q:"En PowerPoint, ¿qué ventaja tiene el almacenamiento en la nube?",opts:["Garantiza disponibilidad","Permite editar sin internet","Cambia el diseño automáticamente","Elimina el peso del archivo"],ans:0},
+  {q:"¿Qué se puede incluir en el pie de página de PowerPoint?",opts:["Solo imágenes","Animaciones","Número de diapositiva o texto","Plantillas"],ans:2},
+  {q:"¿Qué tecla inicia la presentación de PowerPoint desde el principio?",opts:["F5","F1","Esc","Shift + F5"],ans:0},
+  {q:"¿Cómo será supervisado el funcionamiento de ChatGPT en el futuro?",opts:["Solo por sistemas automatizados","Guiado y supervisado por humanos","Funcionará sin supervisión","Por otras inteligencias artificiales"],ans:1},
+  {q:"¿Qué es el aprendizaje profundo en Inteligencia Artificial?",opts:["Un traductor manual","Un software de animación","Una subcategoría del aprendizaje automático con redes neuronales de múltiples capas","Un sistema de bases de datos"],ans:2},
+  {q:"¿Qué beneficios principales ofrece Microsoft Copilot a los usuarios?",opts:["Solo respuestas básicas","Acceso a mejores respuestas, mayor eficiencia y nuevas formas de ser creativos","Solo funciones de calendario","Únicamente almacenamiento en la nube"],ans:1},
+  {q:"¿Qué sector se beneficiará con diagnósticos precoces personalizados gracias a la IA?",opts:["Arquitectura","Agricultura manual","Medicina y salud","Entretenimiento"],ans:2},
+  {q:"¿Cuál es el objetivo final al implementar un chatbot?",opts:["Reducir el número de clientes","Transformar la interacción con los clientes y mejorar la comunicación","Reemplazar completamente a los empleados","Complicar los procesos de atención"],ans:1},
+  {q:"¿Qué significa responsabilidad en IA?",opts:["Rendición de cuentas en desarrollo y uso","Optimizar modelos por velocidad","Explicar cómo funciona el hardware","Incrementar el número de capas neuronales"],ans:0},
+  {q:"¿Cómo se define ChatGPT en términos de su arquitectura?",opts:["Un navegador web","Un modelo de lenguaje de gran tamaño","Una base de datos","Un sistema operativo"],ans:1},
+  {q:"¿Qué opción de vista muestra los saltos de página en Excel?",opts:["Diseño de página","Normal","Vista previa de salto de página","Pantalla completa"],ans:2},
+  {q:"¿Qué nombre se asigna por defecto a un nuevo libro en Excel?",opts:["Documento1","Libro1","Hoja1","Excel1"],ans:1},
+  {q:"¿Qué función realiza Excel al detectar patrones de datos para completar automáticamente celdas?",opts:["Copiar","Autocompletar","Guardar","Deshacer"],ans:1},
+  {q:"En Excel, ¿qué función se activa con el botón 'Guardar como'?",opts:["Guardar con otro nombre o formato","Guardar en automático","Guardar en PDF siempre","Guardar en línea"],ans:0},
+  {q:"En Excel, ¿qué elemento muestra el contenido de la celda activa?",opts:["Barra de estado","Barra de desplazamiento","Barra de fórmulas","Barra de acceso rápido"],ans:2},
+  {q:"En Excel, ¿cuál es la diferencia entre deshacer y rehacer?",opts:["Ambas imprimen","Ambas agregan comentarios","Deshacer revierte, rehacer repite la acción","Ambas eliminan datos"],ans:2},
+  {q:"¿Cuáles son ventajas del Autocompletado en Excel?",opts:["Mayor precisión y ahorro de tiempo","Inserta gráficos y protege hojas","Ordena datos y crea macros","Escala la hoja automáticamente"],ans:0},
+  {q:"¿Qué opción permite importar datos desde un archivo CSV a Excel?",opts:["Importar desde archivo","Insertar gráfico","Copiar y pegar","Buscar y reemplazar"],ans:0},
+  {q:"¿Cuál es el atajo de teclado para rehacer una acción en Excel?",opts:["Ctrl + Z","Ctrl + R","Ctrl + X","Ctrl + Y"],ans:3},
+  {q:"¿Dónde se escribe el texto del comentario en Excel?",opts:["En el cuadro que aparece","En el menú archivo","En la barra de título","En la barra de estado"],ans:0},
+  {q:"¿Cuál es el atajo de teclado para deshacer un cambio en Excel?",opts:["Ctrl + Y","Ctrl + Z","Ctrl + P","Ctrl + X"],ans:1},
+  {q:"En Excel, ¿qué utilidad tienen los comentarios en una hoja de cálculo?",opts:["Explicar o aclarar información en una celda","Copiar valores","Escalar el archivo","Ordenar datos"],ans:0},
+  {q:"¿Qué tipo de gráfico es más útil para visualizar correlaciones en Excel?",opts:["Área","Circular","Dispersión","Barras"],ans:2},
+  {q:"¿Qué combinación de funciones en Excel permite búsquedas más flexibles que BUSCARV?",opts:["SI y Y","SUMA y SI","MAX y MIN","INDICE y COINCIDIR"],ans:3},
+  {q:"En Excel, ¿cuál herramienta permite filtrar interactivamente en gráficos dinámicos?",opts:["Buscar objetivo","Pegado especial","Filtros avanzados","Segmentación de datos"],ans:3},
+  {q:"En Excel, ¿cuál de las siguientes funciones es útil para pagos de préstamos?",opts:["PAGO","SI","PROMEDIO","COINCIDIR"],ans:0},
+  {q:"En Excel, ¿cuál función devuelve el menor valor en un rango?",opts:["MIN","MAX","PROMEDIO","INDICE"],ans:0},
+  {q:"¿Qué ventaja principal ofrecen las macros en Excel?",opts:["Aumentan errores humanos","Crear contraseñas","Eliminar gráficos automáticos","Reducen tiempo en tareas repetitivas"],ans:3},
+  {q:"¿Cuál es la principal función de un gráfico en Excel?",opts:["Mostrar datos en tablas","Reducir el tamaño de la hoja","Reemplazar fórmulas","Representar datos de forma visual"],ans:3},
+  {q:"¿Qué gráfico es más útil para comparar cantidades entre distintas regiones?",opts:["Circular","Línea","Barras","Dispersión"],ans:2},
+  {q:"¿Qué gráfico se usa para mostrar variaciones de una serie en el tiempo?",opts:["Gráfico de columnas","Gráfico de dispersión","Gráfico de líneas","Gráfico circular"],ans:2},
+  {q:"¿Qué opción permite personalizar los colores de las series en un gráfico de Excel?",opts:["Ejes","Leyenda","Formato de serie","Escalas"],ans:2},
+  {q:"¿Qué gráfico es ideal para mostrar evolución de datos continuos?",opts:["Línea","Área","Circular","Barras"],ans:0},
+  {q:"¿Qué ventaja tienen los gráficos sobre tablas extensas?",opts:["Reemplazan macros","Aumentan el tamaño","Resumen y simplificación visual","Reducen el número de fórmulas"],ans:2},
+  {q:"En Excel, ¿cuál es el resultado de elegir escala 200%?",opts:["El contenido se imprime más grande","Se eliminan columnas","Se ajusta a una página","El contenido se reduce"],ans:0},
+  {q:"¿Cuál es el propósito de 'Imprimir en blanco y negro' en Excel?",opts:["Desactivar fórmulas","Reducir el consumo de tinta","Aumentar velocidad","Eliminar celdas"],ans:1},
+  {q:"En Excel, ¿dónde se pueden ajustar los márgenes de forma manual arrastrando?",opts:["Vista normal","Vista salto de página","Vista preliminar","Vista diseño de página"],ans:2},
+  {q:"¿Cuál es el propósito de 'Imprimir calidad borrador' en Excel?",opts:["Aumentar tamaño","Insertar encabezados","Ahorrar tinta","Repetir títulos"],ans:2},
+  {q:"¿Cuál es el beneficio de usar títulos de impresión en Excel?",opts:["Cambiar formato de tabla","Crear más fórmulas","Repetir automáticamente información clave en cada hoja impresa","Reducir el tamaño del archivo"],ans:2},
+  {q:"¿Qué elemento se puede insertar en el encabezado central de Excel?",opts:["Todos: texto, número de página y fecha","Solo texto personalizado","Solo número de página","Solo fecha"],ans:0},
+  {q:"¿Cuál es la opción que permite ver cómo se imprimirá la hoja antes de hacerlo?",opts:["Vista preliminar","Configurar página","Vista normal","Vista salto de página"],ans:0},
+  {q:"¿Qué opción aplica la misma transición a todas las diapositivas de PowerPoint?",opts:["Sin transición","Vista previa","Aplicar a todas","Copiar transición"],ans:2},
+  {q:"En PowerPoint, para guardar una presentación como PDF se accede a:",opts:["Vista PNG","Archivo y elige PDF como formato","Insertar > Exportar","Revisar > Guardar"],ans:1},
+  {q:"En PowerPoint, para eliminar un comentario, primero lo seleccionas y luego:",opts:["Lo duplicas","Seleccionas Eliminar","Dibujas encima","Guardas el archivo"],ans:1},
+  {q:"En PowerPoint, ¿cuál es el atajo para insertar un hipervínculo?",opts:["Ctrl + K","Ctrl + L","Ctrl + H","Ctrl + C"],ans:0},
+  {q:"En PowerPoint, para salir de la vista de presentación se usa la tecla:",opts:["Espacios","Ctrl","Esc","Enter"],ans:2},
+  {q:"¿Qué característica tiene la nueva interfaz de usuario de Microsoft Copilot?",opts:["Es simplificada y sin anuncios, diseñada para trabajo y educación","Está llena de anuncios","Solo funciona en modo oscuro","Requiere instalación adicional"],ans:0},
+  {q:"¿Qué tipo de IA no tiene memoria y solo responde a la situación actual?",opts:["IA de autoconciencia","IA de memoria limitada","IA reactiva","IA de teoría de la mente"],ans:2},
+  {q:"¿Quiénes crearon las herramientas de inteligencia artificial?",opts:["Personas como tú o como yo","Robots avanzados","Inteligencias artificiales anteriores","Sistemas automatizados"],ans:0},
+  {q:"¿Qué es un prompt en ChatGPT?",opts:["Un tipo de archivo","Una instrucción que se le da a ChatGPT","Un error del sistema","Una configuración técnica"],ans:1},
+  {q:"¿Cuál es el enfoque principal sobre el futuro de la IA?",opts:["Que será peligrosa","Que solo será útil para grandes empresas","Que reemplazará completamente a los humanos","Un nuevo mundo con aplicaciones y futuro prometedor"],ans:3},
+  {q:"¿Cómo impulsa la IA la innovación?",opts:["Únicamente reduciendo costos","Al permitir nuevas formas de resolver problemas","Copiando soluciones existentes","Solo mejorando el diseño visual"],ans:1},
+  {q:"¿Qué tipo de IA busca comprender creencias, emociones e intenciones?",opts:["IA de autoconciencia","IA de teoría de la mente","IA multimodal","IA reactiva"],ans:1}
+];
+
+let state={currentUser:null,currentModule:null,questions:[],currentQ:0,answers:[],answered:false,timerInterval:null,timeLeft:0};
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function getUsers(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch{return{}}}
+function saveUsers(u){localStorage.setItem(STORAGE_KEY,JSON.stringify(u))}
+function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',4500)}
+function showOk(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',3000)}
+
+function validarCedula(c){
+  c=c.replace(/-/g,'');
+  if(!/^\d{10}$/.test(c))return false;
+  const d=c.split('').map(Number);
+  if(d[2]>5)return false;
+  const s=d.slice(0,9).reduce((a,v,i)=>{let x=i%2===0?v*2:v;if(x>9)x-=9;return a+x},0);
+  return(10-(s%10))%10===d[9];
+}
+
+document.getElementById('btn-login').addEventListener('click',()=>{
+  const u=document.getElementById('inp-user').value.trim().replace(/-/g,'');
+  const p=document.getElementById('inp-pass').value;
+  if(!u||!p)return showErr('login-err','Completa cédula y contraseña.');
+  const users=getUsers();
+  if(!users[u])return showErr('login-err','Cédula no registrada en el sistema.');
+  if(users[u].pass!==btoa(p))return showErr('login-err','Contraseña incorrecta.');
+  state.currentUser={username:u,...users[u]};
+  users[u].lastLogin=new Date().toISOString();
+  saveUsers(users);loadDash();
+});
+document.getElementById('inp-pass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('btn-login').click()});
+document.getElementById('inp-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('inp-pass').focus()});
+
+document.getElementById('btn-register').addEventListener('click',()=>{
+  const name=document.getElementById('reg-name').value.trim();
+  const u=document.getElementById('reg-user').value.trim().replace(/-/g,'');
+  const email=document.getElementById('reg-email').value.trim();
+  const p=document.getElementById('reg-pass').value;
+  const mod=document.getElementById('reg-module').value;
+  if(!name||!u||!email||!p||!mod)return showErr('reg-err','Completa todos los campos.');
+  if(!validarCedula(u))return showErr('reg-err','El número de cédula no es válido.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return showErr('reg-err','Correo electrónico no válido.');
+  if(p.length<6)return showErr('reg-err','La contraseña debe tener al menos 6 caracteres.');
+  const users=getUsers();
+  if(users[u])return showErr('reg-err','Esta cédula ya está registrada.');
+  users[u]={name,email,pass:btoa(p),passPlain:p,module:mod,registered:new Date().toISOString(),attempts:0,lastLogin:null};
+  saveUsers(users);
+  showOk('reg-ok','¡Cuenta creada! Ahora puedes iniciar sesión.');
+  setTimeout(()=>showScreen('screen-login'),1800);
+});
+
+function loadDash(){
+  const u=state.currentUser;
+  document.getElementById('dash-welcome').textContent=`Hola, ${u.name}`;
+  document.getElementById('dash-sub').textContent=`Cédula: ${u.username} · Módulo ${u.module} asignado`;
+  document.getElementById('card-m1').classList.toggle('locked',u.module!=='1');
+  document.getElementById('card-m2').classList.toggle('locked',u.module!=='2');
+  showScreen('screen-dash');
+}
+
+document.getElementById('card-m1').addEventListener('click',()=>{if(state.currentUser.module!=='1')return;startExam(1)});
+document.getElementById('card-m2').addEventListener('click',()=>{if(state.currentUser.module!=='2')return;startExam(2)});
+function shuffle(arr){return[...arr].sort(()=>Math.random()-.5)}
+
+function startExam(mod){
+  state.currentModule=mod;
+  const bank=mod===1?Q_M1:Q_M2;
+  state.questions=shuffle(bank).slice(0,40);
+  state.currentQ=0;state.answers=new Array(40).fill(null);state.answered=false;
+  document.getElementById('exam-title').textContent=`Simulador Módulo ${mod}`;
+  showScreen('screen-exam');startTimer(3600);renderQ();
+  const users=getUsers();
+  if(users[state.currentUser.username]){
+    users[state.currentUser.username].attempts=(users[state.currentUser.username].attempts||0)+1;
+    saveUsers(users);
+  }
+}
+
+function startTimer(secs){
+  clearInterval(state.timerInterval);state.timeLeft=secs;updateTimer();
+  state.timerInterval=setInterval(()=>{
+    state.timeLeft--;updateTimer();
+    const pill=document.getElementById('exam-timer');
+    if(state.timeLeft<=300)pill.classList.add('urgent'); else pill.classList.remove('urgent');
+    if(state.timeLeft<=0){clearInterval(state.timerInterval);finishExam()}
+  },1000);
+}
+function updateTimer(){
+  const m=Math.floor(state.timeLeft/60).toString().padStart(2,'0');
+  const s=(state.timeLeft%60).toString().padStart(2,'0');
+  document.getElementById('exam-timer').textContent=`${m}:${s}`;
+}
+
+function renderQ(){
+  const qs=state.questions;const idx=state.currentQ;const q=qs[idx];
+  state.answered=state.answers[idx]!==null;
+  document.getElementById('q-counter').textContent=`Pregunta ${idx+1} de ${qs.length}`;
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('prog-bar').style.width=`${(idx/qs.length)*100}%`;
+  const fb=document.getElementById('feedback-box');fb.style.display='none';fb.className='feedback';
+  const ul=document.getElementById('q-options');ul.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const li=document.createElement('li');li.className='opt';
+    if(state.answered){if(i===q.ans)li.classList.add('correct');else if(i===state.answers[idx]&&i!==q.ans)li.classList.add('wrong')}
+    else if(state.answers[idx]===i)li.classList.add('selected');
+    li.innerHTML=`<span class="opt-circle"><span class="opt-dot"></span></span>${opt}`;
+    if(!state.answered)li.addEventListener('click',()=>selectOpt(i));
+    ul.appendChild(li);
+  });
+  const nb=document.getElementById('btn-next');
+  if(state.answered){showFeedback(state.answers[idx]===q.ans);nb.disabled=false;nb.textContent=idx===qs.length-1?'Ver resultados →':'Siguiente →'}
+  else{nb.disabled=true;nb.textContent=idx===qs.length-1?'Finalizar':'Siguiente →'}
+}
+
+function selectOpt(i){
+  if(state.answered)return;
+  const q=state.questions[state.currentQ];
+  state.answers[state.currentQ]=i;state.answered=true;
+  document.querySelectorAll('.opt').forEach((li,idx)=>{
+    if(idx===q.ans)li.classList.add('correct');
+    else if(idx===i&&idx!==q.ans)li.classList.add('wrong');
+    else li.classList.remove('selected');
+  });
+  showFeedback(i===q.ans);
+  const nb=document.getElementById('btn-next');nb.disabled=false;
+  nb.textContent=state.currentQ===state.questions.length-1?'Ver resultados →':'Siguiente →';
+}
+
+function showFeedback(correct){
+  const fb=document.getElementById('feedback-box');
+  fb.className='feedback '+(correct?'ok':'bad');
+  fb.textContent=correct?'¡Correcto!':`Incorrecto. La respuesta correcta es: "${state.questions[state.currentQ].opts[state.questions[state.currentQ].ans]}"`;
+  fb.style.display='block';
+}
+
+document.getElementById('btn-next').addEventListener('click',()=>{
+  if(state.currentQ<state.questions.length-1){state.currentQ++;renderQ()}else finishExam();
+});
+
+function finishExam(){
+  clearInterval(state.timerInterval);
+  const qs=state.questions;let correct=0;
+  state.answers.forEach((a,i)=>{if(a===qs[i].ans)correct++});
+  const total=qs.length;const pct=Math.round((correct/total)*100);const pass=pct>=75;
+  const circle=document.getElementById('result-circle');circle.textContent=`${pct}%`;
+  circle.className='result-ring '+(pass?'ring-pass':'ring-fail');
+  document.getElementById('result-title').textContent=pass?'¡Aprobado!':'No aprobado';
+  document.getElementById('result-msg').textContent=pass
+    ?`Excelente. Superaste el Módulo ${state.currentModule} con ${pct}%. ¡Listo para el examen real!`
+    :`Obtuviste ${pct}%. Necesitas al menos 75% para aprobar. ¡Sigue practicando!`;
+  document.getElementById('r-correct').textContent=correct;
+  document.getElementById('r-wrong').textContent=total-correct;
+  document.getElementById('r-pct').textContent=`${pct}%`;
+  showScreen('screen-result');
+}
+
+document.getElementById('btn-retry').addEventListener('click',()=>startExam(state.currentModule));
+document.getElementById('btn-back-dash').addEventListener('click',loadDash);
+document.getElementById('btn-exit-exam').addEventListener('click',()=>{clearInterval(state.timerInterval);loadDash()});
+document.getElementById('btn-logout').addEventListener('click',()=>{
+  state.currentUser=null;showScreen('screen-login');
+  document.getElementById('inp-user').value='';document.getElementById('inp-pass').value='';
+});
+document.getElementById('go-register').addEventListener('click',()=>showScreen('screen-register'));
+document.getElementById('go-login').addEventListener('click',()=>showScreen('screen-login'));
+document.getElementById('go-admin').addEventListener('click',()=>showScreen('screen-admin'));
+document.getElementById('btn-admin-back').addEventListener('click',()=>{
+  document.getElementById('admin-login-area').style.display='block';
+  document.getElementById('admin-content').style.display='none';
+  document.getElementById('admin-pass-inp').value='';
+  showScreen('screen-login');
+});
+
+document.getElementById('btn-admin-login').addEventListener('click',()=>{
+  const p=document.getElementById('admin-pass-inp').value;
+  if(p!==ADMIN_PASSWORD)return showErr('admin-err','Contraseña incorrecta.');
+  document.getElementById('admin-login-area').style.display='none';
+  document.getElementById('admin-content').style.display='block';
+  const users=getUsers();
+  const entries=Object.entries(users);
+  document.getElementById('admin-count').textContent=`${entries.length} usuario(s) registrado(s)`;
+  const tbody=document.getElementById('users-tbody');tbody.innerHTML='';
+  if(entries.length===0){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:#8AA89A;padding:1.5rem">Sin usuarios registrados aún</td></tr>';
+    return;
+  }
+  entries.forEach(([uname,d])=>{
+    const tr=document.createElement('tr');
+    const date=d.registered?new Date(d.registered).toLocaleDateString('es-EC'):'-';
+    tr.innerHTML=`<td>${d.name||'-'}</td><td style="font-family:'DM Mono',monospace;font-size:12px">${uname}</td><td style="font-size:12px">${d.email||'-'}</td><td><span class="pass-pill">${d.passPlain||'—'}</span></td><td><span class="tag tag-m${d.module}">Módulo ${d.module}</span></td><td>${date}</td><td>${d.attempts||0}</td>`;
+    tbody.appendChild(tr);
+  });
+});
+document.getElementById('admin-pass-inp').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('btn-admin-login').click()});
+</script>
+</body>
+</html>
